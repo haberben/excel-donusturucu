@@ -103,10 +103,10 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                     kaynak_sayfa = xl_file.sheet_names[0]
                 
                 df_kaynak = pd.read_excel(kaynak_dosya, sheet_name=kaynak_sayfa)
-# Durum sütunu kontrolü - sadece boş durum olanları al
-    if 'Durum' in df_kaynak.columns:
-            df_kaynak = df_kaynak[df_kaynak['Durum'].isna() | (df_kaynak['Durum'] == '') | (df_kaynak['Durum'].astype(str).str.strip() == '')]
-            print(f"Durum filtresi uygulandı. Kalan satır sayısı: {len(df_kaynak)}")
+    # Durum sütunu kontrolü - sadece boş durum olanları al
+            if 'Durum' in df_kaynak.columns:
+                df_kaynak = df_kaynak[df_kaynak['Durum'].isna() | (df_kaynak['Durum'] == '') | (df_kaynak['Durum'].astype(str).str.strip() == '')]
+                print(f"Durum filtresi uygulandı. Kalan satır sayısı: {len(df_kaynak)}")
                 
                 # Marka ve kategori eşleştirme sözlükleri
                 marka_map = dict(zip(df_markalar['Marka Adı'], df_markalar['Marka ID']))
