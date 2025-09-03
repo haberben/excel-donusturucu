@@ -105,8 +105,37 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                 df_kaynak = pd.read_excel(kaynak_dosya, sheet_name=kaynak_sayfa)
                 
                 # Marka ve kategori eşleştirme sözlükleri
-                marka_map = dict(zip(df_markalar['Marka Adı'], df_markalar['Marka ID']))
-                kategori_map = dict(zip(df_kategoriler['Kategori Adı'], df_kategoriler['Kategori ID']))
+                # Akıllı marka eşleştirme sözlüğü
+marka_map = {}
+for index, row in df_markalar.iterrows():
+    marka_adi = str(row['Marka Adı']).strip()
+    marka_id = row['Marka ID']
+    # Orijinal hali
+    marka_map[marka_adi] = marka_id
+    # Küçük harf hali
+    marka_map[marka_adi.lower()] = marka_id
+    # Büyük harf hali
+    marka_map[marka_adi.upper()] = marka_id
+    # İlk harf büyük hali
+    marka_map[marka_adi.capitalize()] = marka_id
+
+# Akıllı kategori eşleştirme sözlüğü
+kategori_map = {}
+for index, row in df_kategoriler.iterrows():
+    kategori_adi = str(row['Kategori Adı']).strip()
+    kategori_id = row['Kategori ID']
+    # Orijinal hali
+    kategori_map[kategori_adi] = kategori_id
+    # Küçük harf hali
+    kategori_map[kategori_adi.lower()] = kategori_id
+    # Büyük harf hali
+    kategori_map[kategori_adi.upper()] = kategori_id
+    # İlk harf büyük hali
+    kategori_map[kategori_adi.capitalize()] = kategori_id
+    
+# Özel kategori eşleştirmeleri
+kategori_map["Dizüstü Bilgisayar"] = kategori_map.get("Dizüstü Bilgisayar & Laptop")
+kategori_map["dizüstü bilgisayar"] = kategori_map.get("Dizüstü Bilgisayar & Laptop")
                 
                 # Kolon eşleştirmelerine göre veri aktar
                 for kaynak_kolon, hedef_kolon in kolon_eslestirme.items():
