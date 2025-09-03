@@ -120,10 +120,18 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                         if pd.notna(row['Marka']) else row['Ürün Adı'], axis=1
                     )
                   # Açıklama düzenleme
-                if 'Ürün Açıklaması' in df_hedef.columns:
-                    df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].astype(str)
-                    df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].str.replace(';', '<br>', regex=False)
-                    df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].str.replace('*', '<br>*', regex=False)
+                # Açıklama düzenleme ve site ismi temizleme
+if 'Ürün Açıklaması' in df_hedef.columns:
+    df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].astype(str)
+    
+    # Site isimlerini temizle
+    site_isimleri = ['trendyol', 'hepsiburada', 'n11', 'gittigidiyor', 'amazon', 'sahibinden', 'pazarama', 'ciceksepeti']
+    for site in site_isimleri:
+        df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].str.replace(site, '', regex=False, case=False)
+    
+    # Diğer temizlemeler
+    df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].str.replace(';', '<br>', regex=False)
+    df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].str.replace('*', '<br>*', regex=False)
                 
                 # Boş açıklamaları ürün adı ile doldur
                 if 'Ürün Açıklaması' in df_hedef.columns and 'Ürün Adı' in df_hedef.columns:
