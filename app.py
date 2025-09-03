@@ -13,7 +13,7 @@ st.set_page_config(
 # Şifre kontrolü
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "Vanliyim65":  # Buraya kendi şifreni yaz
+        if st.session_state["password"] == "idepim-65":  # Buraya kendi şifreni yaz
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
