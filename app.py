@@ -13,7 +13,7 @@ st.set_page_config(
 # Şifre kontrolü
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "idepim65":  # Buraya kendi şifreni yaz
+        if st.session_state["password"] == "admin123":  # Buraya kendi şifreni yaz
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
@@ -75,7 +75,8 @@ kolon_eslestirme = {
     'Görsel 6': 'Görsel 6',
     'Görsel 7': 'Görsel 7',
     'Görsel 8': 'Görsel 8',
-    'Ürün Rengi': 'Renk'
+    'Ürün Rengi': 'Renk',
+    'Boyut/Ebat': 'Boyut/Ebat'
 }
 
 # İşlem butonu ve sonuçlar
@@ -143,6 +144,16 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                     if kaynak_kolon in df_kaynak.columns and hedef_kolon in df_hedef.columns:
                         df_hedef[hedef_kolon] = df_kaynak[kaynak_kolon]
                 
+                # Boyut/Ebat sütunu özel işleme (Renk sütunundan sonra)
+                if 'Boyut/Ebat' in df_kaynak.columns:
+                    # Eğer hedef dosyada Boyut/Ebat sütunu yoksa Renk'ten sonra ekle
+                    if 'Boyut/Ebat' not in df_hedef.columns and 'Renk' in df_hedef.columns:
+                        renk_pos = df_hedef.columns.get_loc('Renk')
+                        df_hedef.insert(renk_pos + 1, 'Boyut/Ebat', df_kaynak['Boyut/Ebat'])
+                    # Eğer hedef dosyada zaten varsa sadece veri aktarımı yap
+                    elif 'Boyut/Ebat' in df_hedef.columns:
+                        df_hedef['Boyut/Ebat'] = df_kaynak['Boyut/Ebat']
+                
                 # Marka adını ürün adına ekle
                 if 'Marka' in df_hedef.columns and 'Ürün Adı' in df_hedef.columns:
                     df_hedef['Ürün Adı'] = df_hedef.apply(
@@ -186,13 +197,6 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                     kategori_id_to_name = dict(zip(df_kategoriler['Kategori ID'], df_kategoriler['Kategori Adı']))
                     df_hedef.insert(df_hedef.columns.get_loc('Kategori'), 'Kategori Adı', 
                                     df_hedef['Kategori'].map(kategori_id_to_name).fillna('Bulunamadı'))
-                
-                # Boyut/Ebat sütunu ekleme (Renk sütunundan sonra)
-                if 'Boyut/Ebat' in df_kaynak.columns and 'Renk' in df_hedef.columns:
-                    # Renk sütununun konumunu bul
-                    renk_pos = df_hedef.columns.get_loc('Renk')
-                    # Boyut/Ebat sütununu Renk'ten sonra ekle
-                    df_hedef.insert(renk_pos + 1, 'Boyut/Ebat', df_kaynak['Boyut/Ebat'])
                 
                 # Sabit kolonlar
                 df_hedef['Stok Adedi'] = 0
