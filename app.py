@@ -108,7 +108,6 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                 
                 # Debug: Sütun isimlerini göster
                 st.info(f"Kaynak dosya sütunları: {list(df_kaynak.columns)}")
-                st.info(f"Hedef dosya sütunları: {list(df_hedef.columns)}")
                 
                 # Akıllı marka eşleştirme sözlüğü
                 marka_map = {}
@@ -148,13 +147,10 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                         df_hedef[hedef_kolon] = df_kaynak[kaynak_kolon]
                         st.success(f"✅ {kaynak_kolon} → {hedef_kolon}")
                 
-                # VARYANT GRUP ID - Model Kodu aktarımı (KESIN ÇÖZÜM)
-                model_kodu_aktarildi = False
-                
-                # Tüm olası Varyant Grup ID sütun isimlerini dene
+                # VARYANT GRUP ID - Model Kodu aktarımı
                 varyant_sutun_isimleri = [
                     'Varyant Grup ID', 'Varyant Grup Id', 'Varyant Grup id',
-                    'VARYANT GRUP ID', 'varyant grup id', 'Varyant Grup ID'
+                    'VARYANT GRUP ID', 'varyant grup id'
                 ]
                 
                 hedef_varyant_sutun = None
@@ -163,26 +159,44 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                         hedef_varyant_sutun = sutun
                         break
                 
-                # Model Kodu sütunu bul
-                model_sutun = None
-                if 'Model Kodu' in df_kaynak.columns:
-                    model_sutun = 'Model Kodu'
+                if 'Model Kodu' in df_kaynak.columns and hedef_varyant_sutun:
+                    df_hedef[hedef_varyant_sutun] = df_kaynak['Model Kodu']
+                    st.success(f"✅ Model Kodu → {hedef_varyant_sutun}")
                 
-                # Aktarım yap
-                if model_sutun and hedef_varyant_sutun:
-                    df_hedef[hedef_varyant_sutun] = df_kaynak[model_sutun]
-                    st.success(f"✅ Model Kodu → {hedef_varyant_sutun} BAŞARILI!")
-                    model_kodu_aktarildi = True
-                else:
-                    st.error(f"HATA: Model Sutun: {model_sutun}, Varyant Sutun: {hedef_varyant_sutun}")
+                # Boyut/Ebat sütunu ekleme (Renk sütunundan sonra)
+                current_pos = df_hedef.columns.get_loc('Renk') if 'Renk' in df_hedef.columns else len(df_hedef.columns)
                 
-                # Boyut/Ebat sütunu özel işleme
                 if 'Boyut/Ebat' in df_kaynak.columns:
-                    if 'Boyut/Ebat' not in df_hedef.columns and 'Renk' in df_hedef.columns:
-                        renk_pos = df_hedef.columns.get_loc('Renk')
-                        df_hedef.insert(renk_pos + 1, 'Boyut/Ebat', df_kaynak['Boyut/Ebat'])
-                    elif 'Boyut/Ebat' in df_hedef.columns:
+                    if 'Boyut/Ebat' not in df_hedef.columns:
+                        current_pos += 1
+                        df_hedef.insert(current_pos, 'Boyut/Ebat', df_kaynak['Boyut/Ebat'])
+                        st.success("✅ Boyut/Ebat sütunu eklendi")
+                    else:
                         df_hedef['Boyut/Ebat'] = df_kaynak['Boyut/Ebat']
+                
+                # Cep Telefonu Modeli sütunu ekleme
+                if 'Cep Telefonu Modeli' in df_kaynak.columns:
+                    current_pos += 1
+                    df_hedef.insert(current_pos, 'Cep Telefonu Modeli', df_kaynak['Cep Telefonu Modeli'])
+                    st.success("✅ Cep Telefonu Modeli sütunu eklendi")
+                
+                # Uyumlu Marka sütunu ekleme
+                if 'Uyumlu Marka' in df_kaynak.columns:
+                    current_pos += 1
+                    df_hedef.insert(current_pos, 'Uyumlu Marka', df_kaynak['Uyumlu Marka'])
+                    st.success("✅ Uyumlu Marka sütunu eklendi")
+                
+                # Ayakkabı Numarası sütunu ekleme
+                if 'Ayakkabı Numarası' in df_kaynak.columns:
+                    current_pos += 1
+                    df_hedef.insert(current_pos, 'Ayakkabı Numarası', df_kaynak['Ayakkabı Numarası'])
+                    st.success("✅ Ayakkabı Numarası sütunu eklendi")
+                
+                # Beden sütunu ekleme
+                if 'Beden' in df_kaynak.columns:
+                    current_pos += 1
+                    df_hedef.insert(current_pos, 'Beden', df_kaynak['Beden'])
+                    st.success("✅ Beden sütunu eklendi")
                 
                 # Marka adını ürün adına ekle
                 if 'Marka' in df_hedef.columns and 'Ürün Adı' in df_hedef.columns:
@@ -216,28 +230,42 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                 if 'Satıcı Stok Kodu' in df_hedef.columns and 'Barkod' in df_hedef.columns:
                     df_hedef['Satıcı Stok Kodu'] = df_hedef['Satıcı Stok Kodu'].fillna(df_hedef['Barkod'])
                 
-                # Marka ve kategori ID eşleştirmeleri
+                # Marka ID eşleştirmesi
                 if 'Marka' in df_hedef.columns:
                     df_hedef['Marka'] = df_hedef['Marka'].map(marka_map).fillna(df_hedef['Marka'])
-                if 'Kategori' in df_hedef.columns:
-                    df_hedef['Kategori'] = df_hedef['Kategori'].map(kategori_map).fillna(df_hedef['Kategori'])
                 
-                # Kategori Adı sütunu - ORİJİNAL KATEGORİ ADI İLE
+                # Kategori ID eşleştirmesi - DÜZELTME
+                if 'Kategori' in df_hedef.columns and 'Kategori İsmi' in df_kaynak.columns:
+                    # Önce ID eşleştirmesini dene
+                    kategori_idleri = df_hedef['Kategori'].map(kategori_map)
+                    
+                    # Eşleşmeyenler için orijinal kategori adını koru
+                    for i in range(len(df_hedef)):
+                        if pd.isna(kategori_idleri.iloc[i]):
+                            # Eşleşme bulunamadı, orijinal kategori adını koru
+                            df_hedef.at[i, 'Kategori'] = df_kaynak.at[i, 'Kategori İsmi']
+                        else:
+                            # Eşleşme bulundu, ID'yi kullan
+                            df_hedef.at[i, 'Kategori'] = kategori_idleri.iloc[i]
+                
+                # Kategori Adı sütunu ekleme (Kategori sütunundan önce)
                 if 'Kategori' in df_hedef.columns and 'Kategori İsmi' in df_kaynak.columns:
                     kategori_id_to_name = dict(zip(df_kategoriler['Kategori ID'], df_kategoriler['Kategori Adı']))
                     kategori_pos = df_hedef.columns.get_loc('Kategori')
                     
-                    # ID bulunanlar için kategori adı, bulunamayanlar için orijinal kategori ismi
                     kategori_adlari = []
-                    for i, kategori_id in enumerate(df_hedef['Kategori']):
-                        if kategori_id in kategori_id_to_name:
-                            kategori_adlari.append(kategori_id_to_name[kategori_id])
+                    for i in range(len(df_hedef)):
+                        kategori_degeri = df_hedef.at[i, 'Kategori']
+                        
+                        # Eğer sayısal ID ise, kategori adını bul
+                        if str(kategori_degeri).isdigit() and int(kategori_degeri) in kategori_id_to_name:
+                            kategori_adlari.append(kategori_id_to_name[int(kategori_degeri)])
                         else:
-                            # Orijinal kategori adını kullan
-                            orijinal_ad = df_kaynak['Kategori İsmi'].iloc[i] if i < len(df_kaynak['Kategori İsmi']) else 'Bilinmiyor'
-                            kategori_adlari.append(orijinal_ad)
+                            # ID değilse, değerin kendisi kategori adı
+                            kategori_adlari.append(str(kategori_degeri))
                     
                     df_hedef.insert(kategori_pos, 'Kategori Adı', kategori_adlari)
+                    st.success("✅ Kategori Adı sütunu eklendi")
                 
                 # Sabit kolonlar
                 df_hedef['Stok Adedi'] = 0
@@ -269,7 +297,7 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
             with col2:
                 st.metric("Toplam Kolon", len(df_hedef.columns))
             with col3:
-                st.metric("Model Kodu Aktarım", "✅" if model_kodu_aktarildi else "❌")
+                st.metric("Kaynak Sayfa", kaynak_sayfa)
             
             # Önizleme
             with st.expander("📋 Sonuç Önizlemesi (İlk 5 satır)"):
