@@ -13,7 +13,7 @@ st.set_page_config(
 # Şifre kontrolü
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "admin123":  # Buraya kendi şifreni yaz
+        if st.session_state["password"] == "idepim65":  # Buraya kendi şifreni yaz
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
@@ -289,4 +289,4 @@ st.markdown("""
 4. **İndir**: Sonuç dosyasını bilgisayarınıza indirin
 
 **🔐 Şifre**: Güvenlik için değiştirmeyi unutmayın!
-"
+""")
