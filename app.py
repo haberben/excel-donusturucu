@@ -143,6 +143,17 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                 for kaynak_kolon, hedef_kolon in kolon_eslestirme.items():
                     if kaynak_kolon in df_kaynak.columns and hedef_kolon in df_hedef.columns:
                         df_hedef[hedef_kolon] = df_kaynak[kaynak_kolon]
+                        print(f"✅ {kaynak_kolon} → {hedef_kolon} aktarıldı")
+                    else:
+                        print(f"⚠️ {kaynak_kolon} bulunamadı")
+                
+                # Model Kodu özel işleme (Varyant Grup ID için)
+                if 'Model Kodu' in df_kaynak.columns:
+                    if 'Varyant Grup ID' in df_hedef.columns:
+                        df_hedef['Varyant Grup ID'] = df_kaynak['Model Kodu']
+                        print("✅ Model Kodu → Varyant Grup ID özel aktarım yapıldı")
+                    else:
+                        print("⚠️ Varyant Grup ID sütunu hedef dosyada bulunamadı")
                 
                 # Boyut/Ebat sütunu özel işleme (Renk sütunundan sonra)
                 if 'Boyut/Ebat' in df_kaynak.columns:
