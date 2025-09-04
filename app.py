@@ -64,7 +64,6 @@ kolon_eslestirme = {
     'Marka': 'Marka',
     'Ürün Açıklaması': 'Ürün Açıklaması',
     'Tedarikçi Stok Kodu': 'Satıcı Stok Kodu',
-    'Model Kodu': 'Varyant Grup ID',
     'KDV Oranı': 'KDV',
     'Desi': 'Desi',
     'Görsel 1': 'Görsel 1',
