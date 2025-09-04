@@ -13,7 +13,7 @@ st.set_page_config(
 # Şifre kontrolü
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "idepim65":  # Buraya kendi şifreni yaz
+        if st.session_state["password"] == "admin123":  # Buraya kendi şifreni yaz
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
@@ -106,6 +106,10 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                 
                 df_kaynak = pd.read_excel(kaynak_dosya, sheet_name=kaynak_sayfa)
                 
+                # Debug: Sütun isimlerini göster
+                st.info(f"Kaynak dosya sütunları: {list(df_kaynak.columns)}")
+                st.info(f"Hedef dosya sütunları: {list(df_hedef.columns)}")
+                
                 # Akıllı marka eşleştirme sözlüğü
                 marka_map = {}
                 for index, row in df_markalar.iterrows():
@@ -142,25 +146,41 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                 for kaynak_kolon, hedef_kolon in kolon_eslestirme.items():
                     if kaynak_kolon in df_kaynak.columns and hedef_kolon in df_hedef.columns:
                         df_hedef[hedef_kolon] = df_kaynak[kaynak_kolon]
-                        print(f"✅ {kaynak_kolon} → {hedef_kolon} aktarıldı")
-                    else:
-                        print(f"⚠️ {kaynak_kolon} bulunamadı")
+                        st.success(f"✅ {kaynak_kolon} → {hedef_kolon}")
                 
-                # Model Kodu özel işleme (Varyant Grup ID için)
+                # VARYANT GRUP ID - Model Kodu aktarımı (KESIN ÇÖZÜM)
+                model_kodu_aktarildi = False
+                
+                # Tüm olası Varyant Grup ID sütun isimlerini dene
+                varyant_sutun_isimleri = [
+                    'Varyant Grup ID', 'Varyant Grup Id', 'Varyant Grup id',
+                    'VARYANT GRUP ID', 'varyant grup id', 'Varyant Grup ID'
+                ]
+                
+                hedef_varyant_sutun = None
+                for sutun in varyant_sutun_isimleri:
+                    if sutun in df_hedef.columns:
+                        hedef_varyant_sutun = sutun
+                        break
+                
+                # Model Kodu sütunu bul
+                model_sutun = None
                 if 'Model Kodu' in df_kaynak.columns:
-                    if 'Varyant Grup ID' in df_hedef.columns:
-                        df_hedef['Varyant Grup ID'] = df_kaynak['Model Kodu']
-                        print("✅ Model Kodu → Varyant Grup ID özel aktarım yapıldı")
-                    else:
-                        print("⚠️ Varyant Grup ID sütunu hedef dosyada bulunamadı")
+                    model_sutun = 'Model Kodu'
                 
-                # Boyut/Ebat sütunu özel işleme (Renk sütunundan sonra)
+                # Aktarım yap
+                if model_sutun and hedef_varyant_sutun:
+                    df_hedef[hedef_varyant_sutun] = df_kaynak[model_sutun]
+                    st.success(f"✅ Model Kodu → {hedef_varyant_sutun} BAŞARILI!")
+                    model_kodu_aktarildi = True
+                else:
+                    st.error(f"HATA: Model Sutun: {model_sutun}, Varyant Sutun: {hedef_varyant_sutun}")
+                
+                # Boyut/Ebat sütunu özel işleme
                 if 'Boyut/Ebat' in df_kaynak.columns:
-                    # Eğer hedef dosyada Boyut/Ebat sütunu yoksa Renk'ten sonra ekle
                     if 'Boyut/Ebat' not in df_hedef.columns and 'Renk' in df_hedef.columns:
                         renk_pos = df_hedef.columns.get_loc('Renk')
                         df_hedef.insert(renk_pos + 1, 'Boyut/Ebat', df_kaynak['Boyut/Ebat'])
-                    # Eğer hedef dosyada zaten varsa sadece veri aktarımı yap
                     elif 'Boyut/Ebat' in df_hedef.columns:
                         df_hedef['Boyut/Ebat'] = df_kaynak['Boyut/Ebat']
                 
@@ -202,11 +222,22 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                 if 'Kategori' in df_hedef.columns:
                     df_hedef['Kategori'] = df_hedef['Kategori'].map(kategori_map).fillna(df_hedef['Kategori'])
                 
-                # Kategori ID'den kategori adını getir (kontrol için)
-                if 'Kategori' in df_hedef.columns:
+                # Kategori Adı sütunu - ORİJİNAL KATEGORİ ADI İLE
+                if 'Kategori' in df_hedef.columns and 'Kategori İsmi' in df_kaynak.columns:
                     kategori_id_to_name = dict(zip(df_kategoriler['Kategori ID'], df_kategoriler['Kategori Adı']))
-                    df_hedef.insert(df_hedef.columns.get_loc('Kategori'), 'Kategori Adı', 
-                                    df_hedef['Kategori'].map(kategori_id_to_name).fillna('Bulunamadı'))
+                    kategori_pos = df_hedef.columns.get_loc('Kategori')
+                    
+                    # ID bulunanlar için kategori adı, bulunamayanlar için orijinal kategori ismi
+                    kategori_adlari = []
+                    for i, kategori_id in enumerate(df_hedef['Kategori']):
+                        if kategori_id in kategori_id_to_name:
+                            kategori_adlari.append(kategori_id_to_name[kategori_id])
+                        else:
+                            # Orijinal kategori adını kullan
+                            orijinal_ad = df_kaynak['Kategori İsmi'].iloc[i] if i < len(df_kaynak['Kategori İsmi']) else 'Bilinmiyor'
+                            kategori_adlari.append(orijinal_ad)
+                    
+                    df_hedef.insert(kategori_pos, 'Kategori Adı', kategori_adlari)
                 
                 # Sabit kolonlar
                 df_hedef['Stok Adedi'] = 0
@@ -238,7 +269,7 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
             with col2:
                 st.metric("Toplam Kolon", len(df_hedef.columns))
             with col3:
-                st.metric("Kaynak Sayfa", kaynak_sayfa)
+                st.metric("Model Kodu Aktarım", "✅" if model_kodu_aktarildi else "❌")
             
             # Önizleme
             with st.expander("📋 Sonuç Önizlemesi (İlk 5 satır)"):
@@ -258,4 +289,4 @@ st.markdown("""
 4. **İndir**: Sonuç dosyasını bilgisayarınıza indirin
 
 **🔐 Şifre**: Güvenlik için değiştirmeyi unutmayın!
-""")
+"
