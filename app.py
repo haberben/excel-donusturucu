@@ -76,7 +76,6 @@ kolon_eslestirme = {
     'Görsel 7': 'Görsel 7',
     'Görsel 8': 'Görsel 8',
     'Ürün Rengi': 'Renk'
-    'Boyut/Ebat': 'Boyut/Ebat'
 }
 
 # İşlem butonu ve sonuçlar
