@@ -31,7 +31,8 @@ def check_password():
         return False
     else:
         return True
-      # Şifre kontrolü
+
+# Şifre kontrolü
 if not check_password():
     st.stop()
 
@@ -75,7 +76,9 @@ kolon_eslestirme = {
     'Görsel 7': 'Görsel 7',
     'Görsel 8': 'Görsel 8',
     'Ürün Rengi': 'Renk'
+    'Boyut/Ebat': 'Boyut/Ebat'
 }
+
 # İşlem butonu ve sonuçlar
 if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=True):
     if not all([hedef_dosya, markalar_dosyasi, kategoriler_dosyasi, kaynak_dosya]):
@@ -85,7 +88,7 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
             with st.spinner("⏳ İşlem yapılıyor..."):
                 
                 # Dosyaları okuma
-                df_hedef = pd.read_excel(hedef_dosya, sheet_name='Sheet1')
+                df_hedef = pd.read_excel(hedef_dosya, sheet_name=0)
                 df_markalar = pd.read_excel(markalar_dosyasi)
                 df_kategoriler = pd.read_excel(kategoriler_dosyasi)
                 
@@ -104,9 +107,37 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                 
                 df_kaynak = pd.read_excel(kaynak_dosya, sheet_name=kaynak_sayfa)
                 
-                # Marka ve kategori eşleştirme sözlükleri
-                marka_map = dict(zip(df_markalar['Marka Adı'], df_markalar['Marka ID']))
-                kategori_map = dict(zip(df_kategoriler['Kategori Adı'], df_kategoriler['Kategori ID']))
+                # Akıllı marka eşleştirme sözlüğü
+                marka_map = {}
+                for index, row in df_markalar.iterrows():
+                    marka_adi = str(row['Marka Adı']).strip()
+                    marka_id = row['Marka ID']
+                    # Orijinal hali
+                    marka_map[marka_adi] = marka_id
+                    # Küçük harf hali
+                    marka_map[marka_adi.lower()] = marka_id
+                    # Büyük harf hali
+                    marka_map[marka_adi.upper()] = marka_id
+                    # İlk harf büyük hali
+                    marka_map[marka_adi.capitalize()] = marka_id
+
+                # Akıllı kategori eşleştirme sözlüğü
+                kategori_map = {}
+                for index, row in df_kategoriler.iterrows():
+                    kategori_adi = str(row['Kategori Adı']).strip()
+                    kategori_id = row['Kategori ID']
+                    # Orijinal hali
+                    kategori_map[kategori_adi] = kategori_id
+                    # Küçük harf hali
+                    kategori_map[kategori_adi.lower()] = kategori_id
+                    # Büyük harf hali
+                    kategori_map[kategori_adi.upper()] = kategori_id
+                    # İlk harf büyük hali
+                    kategori_map[kategori_adi.capitalize()] = kategori_id
+                    
+                # Özel kategori eşleştirmeleri
+                kategori_map["Dizüstü Bilgisayar"] = kategori_map.get("Dizüstü Bilgisayar & Laptop")
+                kategori_map["dizüstü bilgisayar"] = kategori_map.get("Dizüstü Bilgisayar & Laptop")
                 
                 # Kolon eşleştirmelerine göre veri aktar
                 for kaynak_kolon, hedef_kolon in kolon_eslestirme.items():
@@ -119,9 +150,17 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                         lambda row: f"{str(row['Marka']).capitalize()} {row['Ürün Adı']}" 
                         if pd.notna(row['Marka']) else row['Ürün Adı'], axis=1
                     )
-                  # Açıklama düzenleme
+                
+                # Açıklama düzenleme ve site ismi temizleme
                 if 'Ürün Açıklaması' in df_hedef.columns:
                     df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].astype(str)
+                    
+                    # Site isimlerini temizle
+                    site_isimleri = ['trendyol', 'hepsiburada', 'n11', 'gittigidiyor', 'amazon', 'sahibinden', 'pazarama', 'ciceksepeti']
+                    for site in site_isimleri:
+                        df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].str.replace(site, '', regex=False, case=False)
+                    
+                    # Diğer temizlemeler
                     df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].str.replace(';', '<br>', regex=False)
                     df_hedef['Ürün Açıklaması'] = df_hedef['Ürün Açıklaması'].str.replace('*', '<br>*', regex=False)
                 
@@ -142,6 +181,19 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                     df_hedef['Marka'] = df_hedef['Marka'].map(marka_map).fillna(df_hedef['Marka'])
                 if 'Kategori' in df_hedef.columns:
                     df_hedef['Kategori'] = df_hedef['Kategori'].map(kategori_map).fillna(df_hedef['Kategori'])
+                
+                # Kategori ID'den kategori adını getir (kontrol için)
+                if 'Kategori' in df_hedef.columns:
+                    kategori_id_to_name = dict(zip(df_kategoriler['Kategori ID'], df_kategoriler['Kategori Adı']))
+                    df_hedef.insert(df_hedef.columns.get_loc('Kategori'), 'Kategori Adı', 
+                                    df_hedef['Kategori'].map(kategori_id_to_name).fillna('Bulunamadı'))
+                
+                # Boyut/Ebat sütunu ekleme (Renk sütunundan sonra)
+                if 'Boyut/Ebat' in df_kaynak.columns and 'Renk' in df_hedef.columns:
+                    # Renk sütununun konumunu bul
+                    renk_pos = df_hedef.columns.get_loc('Renk')
+                    # Boyut/Ebat sütununu Renk'ten sonra ekle
+                    df_hedef.insert(renk_pos + 1, 'Boyut/Ebat', df_kaynak['Boyut/Ebat'])
                 
                 # Sabit kolonlar
                 df_hedef['Stok Adedi'] = 0
