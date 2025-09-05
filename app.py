@@ -13,7 +13,7 @@ st.set_page_config(
 # Şifre kontrolü
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "idepim65":  # Buraya kendi şifreni yaz
+        if st.session_state["password"] == "admin123":  # Buraya kendi şifreni yaz
             st.session_state["password_correct"] = True
             del st.session_state["password"]
         else:
@@ -248,7 +248,7 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                             # Eşleşme bulundu, ID'yi kullan
                             df_hedef.at[i, 'Kategori'] = kategori_idleri.iloc[i]
                 
-                # Kategori Adı sütunu ekleme (Kategori sütunundan önce)
+                # Kategori Adı sütunu ekleme (sadece kategori adları)
                 if 'Kategori' in df_hedef.columns and 'Kategori İsmi' in df_kaynak.columns:
                     kategori_id_to_name = dict(zip(df_kategoriler['Kategori ID'], df_kategoriler['Kategori Adı']))
                     kategori_pos = df_hedef.columns.get_loc('Kategori')
@@ -257,11 +257,18 @@ if st.button("🚀 Verileri Dönüştür", type="primary", use_container_width=T
                     for i in range(len(df_hedef)):
                         kategori_degeri = df_hedef.at[i, 'Kategori']
                         
-                        # Eğer sayısal ID ise, kategori adını bul
-                        if str(kategori_degeri).isdigit() and int(kategori_degeri) in kategori_id_to_name:
-                            kategori_adlari.append(kategori_id_to_name[int(kategori_degeri)])
+                        # Eğer kategori değeri sayısal ID ise
+                        if str(kategori_degeri).replace('.', '').isdigit():
+                            kategori_id = int(float(kategori_degeri))
+                            if kategori_id in kategori_id_to_name:
+                                # ID'den kategori adını getir
+                                kategori_adlari.append(kategori_id_to_name[kategori_id])
+                            else:
+                                # ID bulunamadı, orijinal kategori adını kullan
+                                orijinal_kategori = df_kaynak.at[i, 'Kategori İsmi'] if i < len(df_kaynak) else 'Bilinmiyor'
+                                kategori_adlari.append(str(orijinal_kategori))
                         else:
-                            # ID değilse, değerin kendisi kategori adı
+                            # Kategori değeri zaten metin (kategori adı)
                             kategori_adlari.append(str(kategori_degeri))
                     
                     df_hedef.insert(kategori_pos, 'Kategori Adı', kategori_adlari)
